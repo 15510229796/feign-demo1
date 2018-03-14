@@ -1,22 +1,28 @@
 package com.jk.controller;
 
+import com.alibaba.fastjson.JSON;
 import com.jk.model.log.LogBean;
 import com.jk.pool.ThreadPool;
 import com.jk.service.login.LogThead;
 import com.jk.service.login.LoginService;
+import org.springframework.amqp.core.AmqpTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Random;
 import java.util.UUID;
 
 @Controller
 @RequestMapping(value = "login")
 public class LoginController {
-   @Autowired
+    @Autowired
     private LoginService loginService;
+    @Autowired
+    private AmqpTemplate amqpTemplate;
     /**
      * 登录
      * @param loginNumber
@@ -38,4 +44,14 @@ public class LoginController {
         ThreadPool.executors(new LogThead(loginService,logBean));
        return true;
     }
+    @RequestMapping(value = "SendSms")
+    @ResponseBody
+    public Boolean SendSms(String photoNumber){
+        HashMap<String, Object> params = new HashMap<>();
+        params.put("photoNumber",photoNumber);
+        params.put("content",new Random().nextInt(1000));
+        amqpTemplate.convertAndSend("sms", JSON.toJSONString(params));
+        return true;
+    }
+
 }
